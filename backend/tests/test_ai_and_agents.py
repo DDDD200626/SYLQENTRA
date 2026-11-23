@@ -2,9 +2,9 @@ import pytest
 
 from app.agents.registry import AGENT_CLASSES, create_agent
 from app.ai_models.base_provider import AIResponse, BaseProvider
-from app.ai_models.model_manager import ModelManager, get_model_manager
-from app.main import app
+from app.ai_models.model_manager import ModelManager
 from tests.conftest import auth_header, register
+from tests.model_overrides import install_fake_models, remove_fake_models
 
 
 class EchoProvider(BaseProvider):
@@ -22,21 +22,25 @@ class EchoProvider(BaseProvider):
         )
 
 
+def _providers() -> dict[str, BaseProvider]:
+    return {
+        "openai": EchoProvider("openai"),
+        "anthropic": EchoProvider("anthropic"),
+        "google": EchoProvider("google"),
+    }
+
+
 def _manager() -> ModelManager:
-    return ModelManager(
-        providers={
-            "openai": EchoProvider("openai"),
-            "anthropic": EchoProvider("anthropic"),
-            "google": EchoProvider("google"),
-        }
-    )
+    return ModelManager(providers=_providers())
 
 
 @pytest.fixture
 def fake_models():
-    app.dependency_overrides[get_model_manager] = _manager
+    from app.main import app
+
+    install_fake_models(app, _providers())
     yield
-    app.dependency_overrides.pop(get_model_manager, None)
+    remove_fake_models(app)
 
 
 def test_each_agent_has_a_distinct_contract():

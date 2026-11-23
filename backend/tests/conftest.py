@@ -14,7 +14,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
 from app.ai_models.base_provider import AIResponse, BaseProvider
-from app.ai_models.model_manager import ModelManager, get_model_manager
 from app.database.base import Base
 from app.database.seed import bootstrap_platform_admin, seed_reference_data
 from app.database.session import SessionLocal, engine
@@ -39,11 +38,16 @@ class EchoProvider(BaseProvider):
 
 @pytest.fixture
 def fake_models():
-    app.dependency_overrides[get_model_manager] = lambda: ModelManager(
-        providers={name: EchoProvider(name) for name in ("openai", "anthropic", "google")}
-    )
+    from tests.model_overrides import install_fake_models, remove_fake_models
+
+    providers: dict[str, BaseProvider] = {
+        "openai": EchoProvider("openai"),
+        "anthropic": EchoProvider("anthropic"),
+        "google": EchoProvider("google"),
+    }
+    install_fake_models(app, providers)
     yield
-    app.dependency_overrides.pop(get_model_manager, None)
+    remove_fake_models(app)
 
 PLATFORM_EMAIL = "platform-admin@example.com"
 PLATFORM_PASSWORD = "Platform1234"

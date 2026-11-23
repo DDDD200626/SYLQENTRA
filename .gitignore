@@ -13,6 +13,12 @@ htmlcov/
 .DS_Store
 frontend/node_modules/
 frontend/dist/
+infrastructure/terraform/.terraform/
+infrastructure/terraform/build/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/tfplan
+infrastructure/terraform/crash.log
 *.egg-info/
 dist/
 build/

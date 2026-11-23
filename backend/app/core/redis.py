@@ -2,7 +2,7 @@ from app.core.config import settings
 
 
 def check_redis() -> str:
-    if not settings.REDIS_URL:
+    if not settings.REDIS_URL.startswith("redis"):
         return "disabled"
     try:
         import redis

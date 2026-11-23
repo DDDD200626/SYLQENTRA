@@ -7,8 +7,3 @@ variable "project" {
   type    = string
   default = "sylqentra"
 }
-
-variable "db_password" {
-  type      = string
-  sensitive = true
-}
