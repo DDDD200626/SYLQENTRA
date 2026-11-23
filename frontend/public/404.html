@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>SYLQENTRA</title>
+    <script>
+      var base = "/SYLQENTRA";
+      var rest = location.pathname.indexOf(base) === 0 ? location.pathname.slice(base.length) : location.pathname;
+      sessionStorage.setItem("sylqentra-path", rest || "/");
+      location.replace(base + "/");
+    </script>
+  </head>
+  <body></body>
+</html>
