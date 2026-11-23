@@ -107,10 +107,17 @@ const TASK_LABELS: { key: string; label: string }[] = [
   { key: "cancelled", label: "취소" },
 ];
 
+function appBase() {
+  return import.meta.env.BASE_URL.replace(/\/$/, "");
+}
+
 function normalizePath(pathname: string) {
-  if (!pathname) return "/";
-  if (pathname.length > 1 && pathname.endsWith("/")) return pathname.slice(0, -1);
-  return pathname;
+  const base = appBase();
+  let path = pathname || "/";
+  if (base && (path === base || path.startsWith(`${base}/`))) path = path.slice(base.length) || "/";
+  if (!path.startsWith("/")) path = `/${path}`;
+  if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+  return path;
 }
 
 function useRoute() {
@@ -124,8 +131,9 @@ function useRoute() {
 
   const navigate = useCallback((next: string, replace = false) => {
     const target = normalizePath(next);
+    const url = target === "/" ? `${appBase()}/` : `${appBase()}${target}`;
     if (normalizePath(window.location.pathname) !== target) {
-      window.history[replace ? "replaceState" : "pushState"](null, "", target);
+      window.history[replace ? "replaceState" : "pushState"](null, "", url);
     }
     setPath(target);
     document.title = "SYLQENTRA";
@@ -359,7 +367,7 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
           시작하기
         </a>
       </section>
-      <footer className="site-footer">SYLQENTRA · 문서, 에이전트, 자동화</footer>
+      <footer className="site-footer">SYLQENTRA · 문서, 에이전트, 자동화. 로그인과 요금 변경은 API 서버가 연결된 주소에서 동작합니다.</footer>
     </div>
   );
 }
