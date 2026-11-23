@@ -37,6 +37,21 @@ class AgentRunRequest(BaseModel):
     tool: str | None = Field(default=None, max_length=100)
 
 
+class OrchestrationRequest(BaseModel):
+    request: str = Field(min_length=1, max_length=20000)
+    provider: str = Field(min_length=1, max_length=50)
+    model: str = Field(min_length=1, max_length=100)
+
+
+class OrchestrationResponse(BaseModel):
+    task_id: str
+    status: str
+    plan: list[str]
+    outputs: dict[str, str]
+    final_output: str
+    error: str
+
+
 class AgentRunResponse(BaseModel):
     agent_role: str
     status: str
