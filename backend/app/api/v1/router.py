@@ -1,6 +1,17 @@
 from fastapi import APIRouter
 
-from app.api.v1.routes import agents, ai, auth, dashboard, health, orchestrations, organizations, tasks, workflows
+from app.api.v1.routes import (
+    agents,
+    ai,
+    auth,
+    dashboard,
+    health,
+    integrations,
+    orchestrations,
+    organizations,
+    tasks,
+    workflows,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -12,3 +23,4 @@ api_router.include_router(agents.router)
 api_router.include_router(ai.router)
 api_router.include_router(orchestrations.router)
 api_router.include_router(workflows.router)
+api_router.include_router(integrations.router)
