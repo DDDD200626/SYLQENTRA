@@ -690,6 +690,31 @@ function Dashboard({ token }: { token: string }) {
   );
 }
 
+async function waitForTask(token: string, taskId: string): Promise<OrchestrationResult> {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const task = await request<{ status: string; result?: Partial<OrchestrationResult> }>(`/tasks/${taskId}`, {}, token);
+    if (task.status === "completed" || task.status === "failed") {
+      return {
+        task_id: taskId,
+        status: task.status,
+        plan: task.result?.plan || [],
+        outputs: task.result?.outputs || {},
+        final_output: task.result?.final_output || "",
+        error: task.result?.error || "",
+      };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return {
+    task_id: taskId,
+    status: "running",
+    plan: [],
+    outputs: {},
+    final_output: "아직 실행 중입니다. 현황 화면에서 상태를 다시 확인할 수 있습니다.",
+    error: "",
+  };
+}
+
 function Orchestrate({ token }: { token: string }) {
   const [requestText, setRequestText] = useState("이번 달 매출 보고서를 작성해줘");
   const [result, setResult] = useState<OrchestrationResult | null>(null);
@@ -703,7 +728,7 @@ function Orchestrate({ token }: { token: string }) {
     setError("");
     setResult(null);
     try {
-      const body = await request<OrchestrationResult>(
+      let body = await request<OrchestrationResult>(
         "/orchestrations",
         {
           method: "POST",
@@ -711,6 +736,10 @@ function Orchestrate({ token }: { token: string }) {
         },
         token,
       );
+      if (body.status === "pending" || body.status === "running") {
+        setResult({ ...body, final_output: "작업을 큐에 넣었습니다. 이 화면을 닫아도 서버에서 계속 실행됩니다." });
+        body = await waitForTask(token, body.task_id);
+      }
       setResult(body);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "오케스트레이션 요청에 실패했습니다.");

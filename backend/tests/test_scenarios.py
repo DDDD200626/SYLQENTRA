@@ -6,6 +6,21 @@ from app.integrations.github.github_connector import GitHubConnector
 from tests.conftest import auth_header, register
 
 
+def test_failed_orchestration_retries_without_calling_a_paid_model(client, fake_models):
+    owner = register(client, "retry@example.com", "Retry Co")
+    response = client.post(
+        "/api/v1/orchestrations",
+        headers=auth_header(owner["access_token"]),
+        json={"request": "실패하는 공급자", "provider": "missing", "model": "none"},
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["status"] == "failed"
+    task = client.get(f"/api/v1/tasks/{body['task_id']}", headers=auth_header(owner["access_token"]))
+    assert task.json()["result"]["attempts"] == 3
+    assert "Unknown AI provider" in task.json()["result"]["error"]
+
+
 def test_sales_report_orchestration_scenario(client, fake_models):
     owner = register(client, "sales@example.com", "Sales Co")
     headers = auth_header(owner["access_token"])

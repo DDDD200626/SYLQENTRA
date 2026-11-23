@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 
 from app.ai_models.model_manager import ModelManager, get_model_manager
 from app.api.deps import require_permissions
+from app.core.config import settings
 from app.core.permissions import PermissionCode
 from app.database.session import get_db
-from app.orchestration.engine import Orchestrator
+from app.orchestration.jobs import dispatch, enqueue
 from app.schemas.ai import OrchestrationRequest, OrchestrationResponse
 from app.services.tenant import TenantContext
 
@@ -20,18 +21,22 @@ def create_orchestration(
     db: Session = Depends(get_db),
     model_manager: ModelManager = Depends(get_model_manager),
 ) -> OrchestrationResponse:
-    state, task = Orchestrator(db, model_manager).run(
+    task = enqueue(
+        db,
         ctx,
         request=payload.request,
         provider=payload.provider,
         model=payload.model,
         ip_address=request.client.host if request.client else None,
     )
+    dispatch(task.id, model_manager, inline=settings.ENVIRONMENT == "test")
+    db.refresh(task)
+    result = task.result or {}
     return OrchestrationResponse(
         task_id=str(task.id),
-        status=state.status,
-        plan=state.plan,
-        outputs=state.outputs,
-        final_output=state.final_output,
-        error=state.error,
+        status=task.status,
+        plan=list(result.get("plan") or []),
+        outputs=dict(result.get("outputs") or {}),
+        final_output=str(result.get("final_output") or ""),
+        error=str(result.get("error") or ""),
     )

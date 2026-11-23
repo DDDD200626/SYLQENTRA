@@ -21,6 +21,7 @@ class Orchestrator:
         provider: str,
         model: str,
         ip_address: str | None,
+        task: Task | None = None,
     ) -> tuple[OrchestrationState, Task]:
         state = OrchestrationState(request=request)
         state.transition("planning")
@@ -38,7 +39,7 @@ class Orchestrator:
             ip_address=ip_address,
         )
         if manager_result.status != "completed":
-            return self._fail(ctx, state, manager_result.output), self._save_task(ctx, state)
+            return self._fail(ctx, state, manager_result.output), self._save_task(ctx, state, task)
         state.plan = parse_plan(manager_result.output)
         state.transition("running")
         sections: list[str] = []
@@ -53,7 +54,7 @@ class Orchestrator:
                 ip_address=ip_address,
             )
             if result.status != "completed":
-                return self._fail(ctx, state, result.output), self._save_task(ctx, state)
+                return self._fail(ctx, state, result.output), self._save_task(ctx, state, task)
             state.outputs[role] = result.output
             sections.append(f"{role}:\n{result.output}")
         state.transition("reviewing")
@@ -67,10 +68,10 @@ class Orchestrator:
             ip_address=ip_address,
         )
         if review.status != "completed":
-            return self._fail(ctx, state, review.output), self._save_task(ctx, state)
+            return self._fail(ctx, state, review.output), self._save_task(ctx, state, task)
         state.final_output = review.output
         state.transition("completed")
-        return state, self._save_task(ctx, state)
+        return state, self._save_task(ctx, state, task)
 
     def _fail(self, ctx: TenantContext, state: OrchestrationState, message: str) -> OrchestrationState:
         state.error = message
@@ -78,16 +79,27 @@ class Orchestrator:
             state.transition("failed")
         return state
 
-    def _save_task(self, ctx: TenantContext, state: OrchestrationState) -> Task:
-        task = Task(
-            organization_id=ctx.organization_id,
-            created_by=ctx.user.id,
-            title=state.request[:300],
-            description=state.request,
-            status=state.status,
-            result={"plan": state.plan, "outputs": state.outputs, "final_output": state.final_output, "error": state.error},
-        )
-        self.db.add(task)
+    def _save_task(self, ctx: TenantContext, state: OrchestrationState, existing: Task | None = None) -> Task:
+        payload = {
+            "plan": state.plan,
+            "outputs": state.outputs,
+            "final_output": state.final_output,
+            "error": state.error,
+        }
+        if existing is None:
+            task = Task(
+                organization_id=ctx.organization_id,
+                created_by=ctx.user.id,
+                title=state.request[:300],
+                description=state.request,
+                status=state.status,
+                result=payload,
+            )
+            self.db.add(task)
+        else:
+            task = existing
+            task.status = state.status
+            task.result = {**(existing.result or {}), **payload}
         self.db.commit()
         self.db.refresh(task)
         return task

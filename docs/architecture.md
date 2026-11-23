@@ -35,6 +35,31 @@
 
 조직마다 에이전트, 업무, 문서 조각, 워크플로, 사용량이 분리된다. 다른 조직의 업무 번호는 404다. 요금제는 `organizations.plan`이고, 월 한도는 `usage_limits`다. 화면에 적힌 원화는 안내 가격이며 결제 대행은 연결되어 있지 않다.
 
+## 배포 전 운영 조건
+
+기업별 데이터는 `organization_id`로 갈라져 있고, 다른 회사의 업무는 404다. 에이전트 실행은 `agent_runs`에 입력, 출력, 상태를 남긴다. 이메일과 Slack은 승인 전에는 나가지 않는다. 모델별 토큰과 예상 비용은 `model_usage`에 쌓이고, 요금제가 월 한도를 정한다. 오케스트레이션은 대기 상태로 저장된 뒤 최대 3번 다시 시도한다. 테스트 환경에서는 같은 요청 안에서 끝내고, 그 외에는 서버 안의 백그라운드 작업으로 실행한다. 이 큐는 아직 SQS가 아니다.
+
+유료 모델 키를 넣지 않으면 외부 AI 호출은 일어나지 않는다.
+
+## 최종 AWS 목표
+
+지금 적용하지 않은 목표 구조다. `terraform apply`는 실행하지 않았고, 비용이 발생하는 AWS 자원은 만들지 않았다.
+
+| 서비스 | 역할 |
+| --- | --- |
+| Route 53 | 도메인 |
+| CloudFront | 웹 배포 |
+| S3 | 프론트엔드와 문서 |
+| ECS Fargate | FastAPI와 에이전트 |
+| RDS PostgreSQL | 사용자, 기업, 업무 |
+| ElastiCache Redis | 상태와 캐시 |
+| SQS | 긴 AI 작업 대기열 |
+| Secrets Manager | API 키와 비밀번호 |
+| CloudWatch | 로그 |
+| ACM | HTTPS 인증서 |
+
+현재 Terraform은 VPC, RDS, ECS, 로드밸런서, Secrets Manager, CloudWatch 로그만 서술한다. Route 53, CloudFront, ElastiCache, SQS, ACM은 도메인과 운영 트래픽이 생긴 뒤에 붙인다.
+
 ## 배포 경계
 
-로컬 콘솔은 API와 함께 동작한다. GitHub Pages는 정적 소개 페이지만 제공한다. Terraform은 VPC, RDS, ECS, 로드밸런서를 서술하지만 `terraform apply`는 실행하지 않았다.
+로컬 콘솔은 API와 함께 동작한다. GitHub Pages는 정적 소개 페이지만 제공한다.

@@ -88,6 +88,7 @@ class TaskRead(ORMModel):
     title: str
     description: str
     status: str
+    result: dict | None = None
     created_at: datetime
     updated_at: datetime
 
