@@ -1,16 +1,17 @@
 # SYLQENTRA
 
-기업의 업무 요청을 나누어 여러 AI Agent가 처리하는 멀티테넌트 자동화 플랫폼이다. 현재 저장소는 Phase 01부터 Phase 04까지 동작한다.
+기업의 업무 요청을 나누어 여러 AI Agent가 처리하는 멀티테넌트 자동화 플랫폼이다.
 
-| Phase | 상태 | 결과 |
-| --- | --- | --- |
-| 01 개발 환경 | 완료 | 폴더 구조, Docker Compose, 환경 변수 예시 |
-| 02 백엔드 | 완료 | FastAPI, 설정, 로그, 예외, health/dashboard/tasks/agents |
-| 03 데이터베이스 | 완료 | SQLAlchemy 모델 25개 테이블, Alembic baseline |
-| 04 인증과 권한 | 완료 | 회원가입, JWT, RBAC 5역할, 조직별 데이터 분리 |
-| 05 이후 | 아직 아님 | 실제 LLM 호출, Agent 실행, Workflow, MCP, RAG, 프론트엔드, AWS |
+| Phase | 결과 |
+| --- | --- |
+| 01–04 | 환경, FastAPI, PostgreSQL 스키마, JWT와 RBAC |
+| 05–06 | OpenAI, Claude, Gemini 호출과 7개 전문 Agent |
+| 07–08 | 업무 오케스트레이션과 Workflow, cron 판단 |
+| 09–10 | GitHub, Slack 연동과 문서 검색 |
+| 11–12 | React 작업 화면, 승인, 요청 제한 |
+| 13–16 | 지표, 시나리오 테스트, AWS 구성과 CI, 요금제 |
 
-Phase 05 이전에는 AI 응답을 만들지 않는다. 조직을 만들면 Manager, Research, Data, Developer, Document, Review, Automation Agent의 역할과 시스템 프롬프트만 저장한다.
+조직을 만들면 Manager, Research, Data, Developer, Document, Review, Automation Agent가 생긴다. 모델 API 키는 `.env`에만 둔다. 키가 없으면 테스트용 대역이 응답한다. email과 Slack 도구는 승인 전에는 보내지 않는다. 요금제는 free, starter, team, business, enterprise이며 월 토큰 한도를 바꾼다. Terraform은 적용하지 않은 설계 파일이다.
 
 ## 로컬 실행
 
@@ -71,7 +72,7 @@ backend/app/models       테이블
 backend/app/repositories 조회와 저장
 backend/app/services     인증, 조직, 업무, 대시보드
 backend/tests            pytest
-frontend                 Phase 11에서 구현
-infrastructure           Compose 설명, AWS는 Phase 15
+frontend                 React 작업 화면
+infrastructure           Docker Compose와 Terraform
 docs                     ERD와 API 개요
 ```

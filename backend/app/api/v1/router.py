@@ -12,6 +12,7 @@ from app.api.v1.routes import (
     metrics,
     orchestrations,
     organizations,
+    plans,
     tasks,
     workflows,
 )
@@ -20,6 +21,7 @@ api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(organizations.router)
+api_router.include_router(plans.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(tasks.router)
 api_router.include_router(agents.router)

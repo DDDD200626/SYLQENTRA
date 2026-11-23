@@ -9,7 +9,9 @@ from app.models import Membership, Organization, User
 from app.repositories.organization_repository import OrganizationRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.common import MemberCreate, MemberRead, MemberUpdate, OrganizationMembershipRead
+from app.ai_models.usage_manager import UsageManager
 from app.services.agent_service import AgentService
+from app.services.plans import PLANS
 from app.services.audit_service import write_audit
 from app.services.tenant import TenantContext
 from app.core.security import hash_password, validate_password
@@ -31,8 +33,9 @@ class OrganizationService:
         if not cleaned:
             raise BadRequestError("Organization name is required")
         slug = self._unique_slug(cleaned)
-        organization = self.organizations.add(Organization(name=cleaned, slug=slug, is_active=True))
+        organization = self.organizations.add(Organization(name=cleaned, slug=slug, plan="free", is_active=True))
         AgentService(self.db).create_defaults(organization.id)
+        UsageManager(self.db).set_monthly_token_limit(organization.id, PLANS["free"]["monthly_token_limit"])
         if owner is not None:
             self._attach_member(organization, owner, owner_role)
         return organization
@@ -182,6 +185,14 @@ class OrganizationService:
         )
         self.db.commit()
         return organization
+
+    def change_plan(self, ctx: TenantContext, plan_name: str) -> Organization:
+        if plan_name not in PLANS:
+            raise BadRequestError("Unknown subscription plan")
+        ctx.organization.plan = plan_name
+        UsageManager(self.db).set_monthly_token_limit(ctx.organization_id, PLANS[plan_name]["monthly_token_limit"])
+        self.db.commit()
+        return ctx.organization
 
     def rename(self, ctx: TenantContext, name: str) -> Organization:
         cleaned = name.strip()

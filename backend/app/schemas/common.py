@@ -22,6 +22,7 @@ class OrganizationRead(ORMModel):
     id: uuid.UUID
     name: str
     slug: str
+    plan: str = "free"
     is_active: bool
 
 

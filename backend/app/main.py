@@ -35,7 +35,7 @@ async def lifespan(_app: FastAPI):
     logger.info("%s API stopped", settings.APP_NAME)
 
 
-app = FastAPI(title=settings.APP_NAME, version="0.16.0", lifespan=lifespan)
+app = FastAPI(title=settings.APP_NAME, version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

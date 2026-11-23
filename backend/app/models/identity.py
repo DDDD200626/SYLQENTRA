@@ -12,6 +12,7 @@ class Organization(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
+    plan: Mapped[str] = mapped_column(String(40), default="free", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     memberships: Mapped[list["Membership"]] = relationship(back_populates="organization")
