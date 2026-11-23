@@ -8,7 +8,7 @@ DIMENSIONS = 32
 def embed_text(text: str) -> list[float]:
     vector = [0.0] * DIMENSIONS
     for token in re.findall(r"\w+", text.lower()):
-        vector[hash(token) % DIMENSIONS] += 1.0
+        vector[hashlib.sha256(token.encode("utf-8")).digest()[0] % DIMENSIONS] += 1.0
     norm = math.sqrt(sum(value * value for value in vector)) or 1.0
     return [value / norm for value in vector]
 
