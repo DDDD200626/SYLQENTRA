@@ -1,1 +1,0 @@
-"""SYLQENTRA backend application."""
