@@ -26,8 +26,9 @@ class EchoProvider(BaseProvider):
         self.name = name
 
     def generate(self, *, model: str, prompt: str, system_prompt: str | None = None) -> AIResponse:
+        text = prompt if not system_prompt else f"{system_prompt}\n{prompt}"
         return AIResponse(
-            text=system_prompt or prompt,
+            text=text,
             prompt_tokens=1,
             completion_tokens=1,
             latency_ms=1,

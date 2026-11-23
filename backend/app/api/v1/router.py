@@ -7,6 +7,7 @@ from app.api.v1.routes import (
     dashboard,
     health,
     integrations,
+    knowledge,
     orchestrations,
     organizations,
     tasks,
@@ -24,3 +25,4 @@ api_router.include_router(ai.router)
 api_router.include_router(orchestrations.router)
 api_router.include_router(workflows.router)
 api_router.include_router(integrations.router)
+api_router.include_router(knowledge.router)
