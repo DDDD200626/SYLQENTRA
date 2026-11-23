@@ -9,7 +9,9 @@ from app.ai_models.model_manager import ModelManager
 from app.ai_models.usage_manager import UsageManager
 from app.core.exceptions import BadRequestError
 from app.database.base import utcnow
-from app.models import Agent, AgentRun
+from app.models import Agent, AgentRun, Approval
+
+APPROVAL_TOOLS = {"email", "slack"}
 from app.services.audit_service import write_audit
 from app.services.tenant import TenantContext
 
@@ -37,6 +39,38 @@ class AgentExecutionService:
             raise BadRequestError(str(exc)) from exc
 
         started = datetime.now(timezone.utc)
+        if tool in APPROVAL_TOOLS and tool in agent.allowed_tools:
+            approval = Approval(
+                organization_id=ctx.organization_id,
+                requested_by=ctx.user.id,
+                status="pending",
+                reason=f"{role} requested {tool}",
+            )
+            self.db.add(approval)
+            self.db.flush()
+            result = AgentResult(
+                agent_role=role,
+                status="awaiting_approval",
+                output=f"Approval {approval.id} is required before the {tool} tool can run.",
+                provider=provider,
+                model_name=model,
+                prompt_tokens=0,
+                completion_tokens=0,
+                latency_ms=0,
+            )
+            self._save_run(ctx, result, task_input, tool, started)
+            write_audit(
+                self.db,
+                action="agent.approval_requested",
+                resource_type="approval",
+                resource_id=str(approval.id),
+                organization_id=ctx.organization_id,
+                user_id=ctx.user.id,
+                ip_address=ip_address,
+                detail={"role": role, "tool": tool},
+            )
+            self.db.commit()
+            return result
         if tool is None or tool in agent.allowed_tools:
             self.usage.assert_within_limit(ctx.organization_id)
         try:

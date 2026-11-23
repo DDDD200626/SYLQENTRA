@@ -35,7 +35,7 @@ async def lifespan(_app: FastAPI):
     logger.info("%s API stopped", settings.APP_NAME)
 
 
-app = FastAPI(title=settings.APP_NAME, version="0.4.0", lifespan=lifespan)
+app = FastAPI(title=settings.APP_NAME, version="0.16.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
@@ -43,6 +43,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+_request_times: dict[str, list[float]] = {}
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    if settings.ENVIRONMENT == "test" or request.url.path.endswith("/health"):
+        return await call_next(request)
+    import time
+
+    key = request.client.host if request.client else "unknown"
+    now = time.monotonic()
+    recent = [stamp for stamp in _request_times.get(key, []) if now - stamp < 60]
+    if len(recent) >= 120:
+        return JSONResponse(status_code=429, content={"error": {"code": "RATE_LIMITED", "message": "Too many requests"}})
+    recent.append(now)
+    _request_times[key] = recent
+    return await call_next(request)
 
 
 @app.middleware("http")
