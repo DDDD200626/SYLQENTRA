@@ -197,7 +197,7 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
     <div>
       <header className="site-header">
-        <a className="logo" href="/" onClick={(event) => go(event, onNavigate, "/")}>
+        <a className="logo" href={hrefFor("/")} onClick={(event) => go(event, onNavigate, "/")}>
           <span className="logo-mark">S</span>
           SYLQENTRA
         </a>
@@ -208,10 +208,10 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
           <a href="#faq">질문</a>
         </nav>
         <div className="header-actions">
-          <a className="btn" href="/login" onClick={(event) => go(event, onNavigate, "/login")}>
+          <a className="btn" href={hrefFor("/login")} onClick={(event) => go(event, onNavigate, "/login")}>
             로그인
           </a>
-          <a className="btn btn-dark" href="/register" onClick={(event) => go(event, onNavigate, "/register")}>
+          <a className="btn btn-dark" href={hrefFor("/register")} onClick={(event) => go(event, onNavigate, "/register")}>
             시작하기
           </a>
         </div>
@@ -227,7 +227,7 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
             <a className="btn btn-dark" href="#pricing">
               요금 보기
             </a>
-            <a className="btn" href="/register" onClick={(event) => go(event, onNavigate, "/register")}>
+            <a className="btn" href={hrefFor("/register")} onClick={(event) => go(event, onNavigate, "/register")}>
               Free로 시작
             </a>
           </div>
@@ -283,7 +283,7 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
             <a
               key={product.href}
               className="product-card"
-              href="/login"
+              href={hrefFor("/login")}
               onClick={(event) => go(event, onNavigate, "/login")}
             >
               <p className="eyebrow">{product.kicker}</p>
@@ -327,7 +327,7 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
               <p className="price">{plan.price_krw === null ? "문의" : plan.price_krw === 0 ? "무료" : `${plan.price_krw.toLocaleString("ko-KR")}원`}</p>
               <p>{plan.description}</p>
               <p className="meta">월 {plan.monthly_token_limit.toLocaleString("ko-KR")} 토큰</p>
-              <a className="btn btn-dark" href="/register" onClick={(event) => go(event, onNavigate, "/register")}>
+              <a className="btn btn-dark" href={hrefFor("/register")} onClick={(event) => go(event, onNavigate, "/register")}>
                 {plan.price_krw === null ? "도입 상담" : "이 요금으로 시작"}
               </a>
             </article>
@@ -364,13 +364,19 @@ function Landing({ onNavigate }: { onNavigate: (path: string) => void }) {
           <h2>업무의 시작과 끝을 한 화면에 두세요.</h2>
           <p>회사를 등록하면 기본 에이전트와 콘솔이 바로 열립니다.</p>
         </div>
-        <a className="btn" href="/register" onClick={(event) => go(event, onNavigate, "/register")}>
+        <a className="btn" href={hrefFor("/register")} onClick={(event) => go(event, onNavigate, "/register")}>
           시작하기
         </a>
       </section>
       <footer className="site-footer">SYLQENTRA · 문서, 에이전트, 자동화. 로그인과 요금 변경은 API 서버가 연결된 주소에서 동작합니다.</footer>
     </div>
   );
+}
+
+function hrefFor(path: string) {
+  const base = appBase();
+  if (path.startsWith("#")) return path;
+  return path === "/" ? `${base}/` : `${base}${path}`;
 }
 
 function go(event: { preventDefault: () => void; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; button: number }, navigate: (path: string) => void, path: string) {
@@ -410,6 +416,14 @@ function Login({
       });
       onSuccess({ accessToken: result.access_token, organizationName: result.organizations[0]?.name || organization });
     } catch (caught) {
+      if (caught instanceof Error && caught.name === "OfflineError") {
+        onSuccess({ accessToken: "demo", organizationName: organization || "Acme", demo: true });
+        return;
+      }
+      if (caught instanceof TypeError) {
+        onSuccess({ accessToken: "demo", organizationName: organization || "Acme", demo: true });
+        return;
+      }
       setError(caught instanceof Error ? caught.message : "로그인에 실패했습니다.");
     } finally {
       setPending(false);
@@ -419,7 +433,7 @@ function Login({
   return (
     <div className="auth-screen">
       <section className="auth-story">
-        <a className="logo" href="/" onClick={(event) => go(event, onNavigate, "/")} style={{ color: "#fff" }}>
+        <a className="logo" href={hrefFor("/")} onClick={(event) => go(event, onNavigate, "/")} style={{ color: "#fff" }}>
           <span className="logo-mark">S</span>
           SYLQENTRA
         </a>
@@ -496,7 +510,7 @@ function Workspace({
   return (
     <div className="console">
       <header className="console-bar">
-        <a className="logo" href="/dashboard" onClick={(event) => go(event, onNavigate, "/dashboard")}>
+        <a className="logo" href={hrefFor("/dashboard")} onClick={(event) => go(event, onNavigate, "/dashboard")}>
           <span className="logo-mark">S</span>
           SYLQENTRA
         </a>
@@ -504,7 +518,7 @@ function Workspace({
           {PAGES.map((item) => (
             <a
               key={item.id}
-              href={item.path}
+              href={hrefFor(item.path)}
               className={page.id === item.id ? "active" : undefined}
               aria-current={page.id === item.id ? "page" : undefined}
               onClick={(event) => go(event, onNavigate, item.path)}
@@ -521,13 +535,82 @@ function Workspace({
         </div>
       </header>
       <main>
-        {page.id === "dashboard" && <Dashboard token={session.accessToken} />}
-        {page.id === "orchestrations" && <Orchestrate token={session.accessToken} />}
-        {page.id === "agents" && <Agents token={session.accessToken} />}
-        {page.id === "knowledge" && <Knowledge token={session.accessToken} />}
-        {page.id === "automation" && <Automation token={session.accessToken} />}
+        {session.demo && (
+          <p className="banner">이 공개 주소에는 API 서버가 없습니다. 로그인한 뒤의 화면을 샘플로 보여 줍니다. 실제 계정은 로컬 콘솔에서 열립니다.</p>
+        )}
+        {session.demo ? (
+          <DemoScreens page={page.id} />
+        ) : (
+          <>
+            {page.id === "dashboard" && <Dashboard token={session.accessToken} />}
+            {page.id === "orchestrations" && <Orchestrate token={session.accessToken} />}
+            {page.id === "agents" && <Agents token={session.accessToken} />}
+            {page.id === "knowledge" && <Knowledge token={session.accessToken} />}
+            {page.id === "automation" && <Automation token={session.accessToken} />}
+          </>
+        )}
       </main>
     </div>
+  );
+}
+
+function DemoScreens({ page }: { page: PageId }) {
+  if (page === "agents") {
+    return (
+      <section>
+        <PageHeading title="에이전트" description="샘플로 준비된 일곱 역할입니다." />
+        <article className="card">
+          <ul className="stack">
+            {["매니저", "조사", "데이터", "개발", "문서", "검토", "자동화"].map((name) => (
+              <li key={name}>{name} · 사용</li>
+            ))}
+          </ul>
+        </article>
+      </section>
+    );
+  }
+  if (page === "orchestrations") {
+    return (
+      <section>
+        <PageHeading title="실행" description="샘플 업무 결과입니다. 모델 API는 호출하지 않았습니다." />
+        <article className="card">
+          <h2>월간 매출 보고</h2>
+          <p className="prose">데이터 에이전트가 숫자를 읽고, 문서 에이전트가 보고서를 정리한 뒤 검토 에이전트가 확인하는 흐름입니다.</p>
+        </article>
+      </section>
+    );
+  }
+  if (page === "knowledge") {
+    return (
+      <section>
+        <PageHeading title="문서" description="샘플 문서에서 찾은 답입니다." />
+        <article className="card">
+          <h2>외부 이메일은 관리자 승인이 필요합니다.</h2>
+          <p className="meta">출처 규정 · policy.md</p>
+        </article>
+      </section>
+    );
+  }
+  if (page === "automation") {
+    return (
+      <section>
+        <PageHeading title="자동화" description="샘플 워크플로입니다." />
+        <article className="card">
+          <p>데이터 에이전트 → 문서 에이전트</p>
+        </article>
+      </section>
+    );
+  }
+  return (
+    <section>
+      <PageHeading title="현황" description="Acme 샘플 조직입니다." />
+      <div className="metrics">
+        <article className="card"><p className="metric-label">에이전트</p><p className="metric-value">7</p></article>
+        <article className="card"><p className="metric-label">승인 대기</p><p className="metric-value">0</p></article>
+        <article className="card"><p className="metric-label">토큰</p><p className="metric-value">0</p></article>
+        <article className="card"><p className="metric-label">요금제</p><p className="metric-value">Free</p></article>
+      </div>
+    </section>
   );
 }
 
