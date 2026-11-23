@@ -13,10 +13,36 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 
+from app.ai_models.base_provider import AIResponse, BaseProvider
+from app.ai_models.model_manager import ModelManager, get_model_manager
 from app.database.base import Base
 from app.database.seed import bootstrap_platform_admin, seed_reference_data
 from app.database.session import SessionLocal, engine
 from app.main import app
+
+
+class EchoProvider(BaseProvider):
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+    def generate(self, *, model: str, prompt: str, system_prompt: str | None = None) -> AIResponse:
+        return AIResponse(
+            text=system_prompt or prompt,
+            prompt_tokens=1,
+            completion_tokens=1,
+            latency_ms=1,
+            model_name=model,
+            provider=self.name,
+        )
+
+
+@pytest.fixture
+def fake_models():
+    app.dependency_overrides[get_model_manager] = lambda: ModelManager(
+        providers={name: EchoProvider(name) for name in ("openai", "anthropic", "google")}
+    )
+    yield
+    app.dependency_overrides.pop(get_model_manager, None)
 
 PLATFORM_EMAIL = "platform-admin@example.com"
 PLATFORM_PASSWORD = "Platform1234"
