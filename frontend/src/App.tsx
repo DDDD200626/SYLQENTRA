@@ -1,5 +1,6 @@
 import { FormEvent, ReactNode, useCallback, useEffect, useState } from "react";
 import { request, Session } from "./api";
+import { WorkflowBoard } from "./WorkflowBoard";
 
 type PageId = "dashboard" | "orchestrations" | "agents" | "knowledge" | "automation";
 
@@ -953,115 +954,12 @@ function Knowledge({ token }: { token: string }) {
   );
 }
 
-type WorkflowRow = { id: string; name: string; schedule_cron: string | null; is_active: boolean };
-
 function Automation({ token }: { token: string }) {
-  const [name, setName] = useState("월간 매출 보고");
-  const [taskInput, setTaskInput] = useState("1월 100, 2월 130. 매출 보고서를 작성해줘");
-  const [rows, setRows] = useState<WorkflowRow[] | null>(null);
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
   const page = PAGES.find((item) => item.id === "automation")!;
-
-  const load = useCallback(async () => {
-    const body = await request<WorkflowRow[]>("/workflows", {}, token);
-    setRows(body);
-  }, [token]);
-
-  useEffect(() => {
-    void load().catch((caught: unknown) => {
-      setError(caught instanceof Error ? caught.message : "워크플로를 불러오지 못했습니다.");
-    });
-  }, [load]);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setPending(true);
-    setError("");
-    setStatus("");
-    try {
-      const created = await request<{ id: string }>(
-        "/workflows",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name,
-            description: "데이터 에이전트가 숫자를 읽고 문서 에이전트가 보고서를 씁니다.",
-            schedule_cron: "0 9 * * 1",
-            nodes: [
-              { node_key: "analyze", node_type: "agent", config: { role: "data" } },
-              { node_key: "write", node_type: "agent", config: { role: "document" } },
-            ],
-            edges: [{ source: "analyze", target: "write" }],
-          }),
-        },
-        token,
-      );
-      const executed = await request<{ status: string }>(
-        `/workflows/${created.id}/execute`,
-        {
-          method: "POST",
-          body: JSON.stringify({ provider: "openai", model: "gpt-4.1", task_input: taskInput }),
-        },
-        token,
-      );
-      setStatus(executed.status);
-      await load();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "워크플로 실행에 실패했습니다.");
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <section>
-      <PageHeading title={page.label} description={page.description} />
-      <form className="card form-card" onSubmit={submit}>
-        <label className="field">
-          <span>워크플로 이름</span>
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
-        </label>
-        <label className="field">
-          <span>실행할 업무</span>
-          <textarea value={taskInput} onChange={(event) => setTaskInput(event.target.value)} required />
-        </label>
-        <p className="meta">순서: 데이터 에이전트 → 문서 에이전트. 저장되는 일정은 매주 월요일 09:00입니다.</p>
-        <button className="btn btn-dark" type="submit" disabled={pending}>
-          {pending ? "실행 중" : "저장 후 실행"}
-        </button>
-      </form>
-      {error && (
-        <p className="banner error" role="alert">
-          {error}
-        </p>
-      )}
-      {status && <p className="meta">마지막 실행 상태 {status}</p>}
-      {!rows && !error && <p className="empty">워크플로를 불러오는 중입니다.</p>}
-      {rows && rows.length === 0 && <p className="empty">저장된 워크플로가 없습니다.</p>}
-      {rows && rows.length > 0 && (
-        <article className="card">
-          <table>
-            <thead>
-              <tr>
-                <th>이름</th>
-                <th>일정</th>
-                <th>상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.name}</td>
-                  <td>{row.schedule_cron || "없음"}</td>
-                  <td>{row.is_active ? "사용" : "중지"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </article>
-      )}
+      <PageHeading title={page.label} description="에이전트를 캔버스에 놓고 순서를 연결한 뒤 실행합니다." />
+      <WorkflowBoard token={token} />
     </section>
   );
 }

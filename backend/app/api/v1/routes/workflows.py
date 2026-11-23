@@ -69,6 +69,15 @@ def create_workflow(
     return {"id": str(workflow.id), "name": workflow.name}
 
 
+@router.get("/{workflow_id}")
+def get_workflow(
+    workflow_id: uuid.UUID,
+    ctx: TenantContext = Depends(require_permissions(PermissionCode.TASKS_READ)),
+    db: Session = Depends(get_db),
+) -> dict:
+    return WorkflowService(db).detail(ctx.organization_id, workflow_id)
+
+
 @router.post("/{workflow_id}/execute")
 def execute_workflow(
     workflow_id: uuid.UUID,

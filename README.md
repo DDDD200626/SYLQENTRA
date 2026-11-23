@@ -11,7 +11,7 @@
 | 11–12 | React 작업 화면, 승인, 요청 제한 |
 | 13–16 | 지표, 시나리오 테스트, AWS 구성과 CI, 요금제 |
 
-조직을 만들면 Manager, Research, Data, Developer, Document, Review, Automation Agent가 생긴다. 모델 API 키는 `.env`에만 둔다. 키가 없으면 테스트용 대역이 응답한다. email과 Slack 도구는 승인 전에는 보내지 않는다. 요금제는 free, starter, team, business, enterprise이며 월 토큰 한도를 바꾼다. Terraform은 적용하지 않은 설계 파일이다.
+조직을 만들면 Manager, Research, Data, Developer, Document, Review, Automation Agent가 생긴다. 모델 API 키는 `.env`에만 둔다. 키가 없으면 테스트용 대역이 응답한다. email과 Slack 도구는 승인 전에는 보내지 않는다. 요금제는 free, starter, team, business, enterprise이며 월 토큰 한도를 바꾼다. 결과물과 코드 위치는 `docs/architecture.md`에 있다. Terraform은 적용하지 않은 설계 파일이다. 테스트 기록은 `docs/testing/results.md`에 있다.
 
 ## 로컬 실행
 

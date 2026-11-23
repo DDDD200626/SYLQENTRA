@@ -187,6 +187,12 @@ a { color: inherit; }
 .price-card.featured { border-color: #111; }
 .price-card .btn { margin-top: auto; }
 .price { font-size: 28px; font-weight: 650; letter-spacing: -0.04em; }
+.palette { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.board { position: relative; height: 360px; margin: 12px 0; border: 1px solid var(--line); border-radius: 16px; background: #fff; overflow: hidden; }
+.board-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.board-lines line { stroke: #111; stroke-width: 2; }
+.flow-node { position: absolute; width: 128px; min-height: 48px; border-radius: 12px; border: 1px solid #111; background: #fff; cursor: grab; }
+.flow-node.selected { background: #111; color: #fff; }
 .site-footer { padding: 8px 32px 40px; color: var(--muted); font-size: 13px; }
 
 .console { min-height: 100vh; background: var(--paper); }

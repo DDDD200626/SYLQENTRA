@@ -39,4 +39,4 @@ erDiagram
     users ||--o{ audit_logs : performs
 ```
 
-`document_chunks.embedding`은 아직 JSON이다. Phase 10에서 pgvector 컬럼으로 바꾼다.
+`document_chunks.embedding`은 32차원 JSON 벡터다. `organizations.plan`과 `usage_limits.monthly_token_limit`이 요금제와 월 한도를 저장한다.

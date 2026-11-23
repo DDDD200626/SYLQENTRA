@@ -72,6 +72,32 @@ class WorkflowService:
             self.db.scalars(select(Workflow).where(Workflow.organization_id == organization_id).order_by(Workflow.created_at)).all()
         )
 
+    def detail(self, organization_id: uuid.UUID, workflow_id: uuid.UUID) -> dict:
+        workflow = self._owned(organization_id, workflow_id)
+        nodes = list(self.db.scalars(select(WorkflowNode).where(WorkflowNode.workflow_id == workflow.id)).all())
+        edges = list(self.db.scalars(select(WorkflowEdge).where(WorkflowEdge.workflow_id == workflow.id)).all())
+        keys = {node.id: node.node_key for node in nodes}
+        return {
+            "id": str(workflow.id),
+            "name": workflow.name,
+            "description": workflow.description,
+            "schedule_cron": workflow.schedule_cron,
+            "is_active": workflow.is_active,
+            "nodes": [
+                {
+                    "node_key": node.node_key,
+                    "node_type": node.node_type,
+                    "config": node.config or {},
+                    "position": node.position or {},
+                }
+                for node in nodes
+            ],
+            "edges": [
+                {"source": keys.get(edge.source_node_id, ""), "target": keys.get(edge.target_node_id, "")}
+                for edge in edges
+            ],
+        }
+
     def execute(
         self,
         ctx: TenantContext,

@@ -38,3 +38,8 @@ def test_workflow_executes_nodes_in_edge_order(client, fake_models):
     assert executed.json()["status"] == "completed"
     listed = client.get("/api/v1/workflows", headers=headers)
     assert listed.json()[0]["name"] == "월간 매출"
+    detail = client.get(f"/api/v1/workflows/{created.json()['id']}", headers=headers)
+    assert detail.status_code == 200, detail.text
+    body = detail.json()
+    assert [node["config"]["role"] for node in body["nodes"]] == ["data", "document"]
+    assert body["edges"] == [{"source": "analyze", "target": "write"}]
